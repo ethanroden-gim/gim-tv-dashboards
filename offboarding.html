@@ -183,6 +183,19 @@
   .status-other{ background:rgba(137,135,129,0.15); color:#c9c8c3; }
   .status-other .swatch{ background:var(--status-other); }
 
+  /* Rows whose End Date has already passed get an overall red wash,
+     regardless of status, to flag them for review. */
+  tr.row-overdue td{
+    background: rgba(208,59,59,0.18);
+  }
+  tr.row-overdue td.assoc{
+    color:#ffb3b3;
+  }
+  tr.row-overdue td.end-date{
+    color:#ff8f8f;
+    font-weight:600;
+  }
+
   th.col-assoc{ width:34%; }
   th.col-end{ width:128px; }
   th.col-status{ width:170px; }
@@ -301,9 +314,12 @@ async function loadData(){
       const r = table[i];
       const assoc = (r[0] || '').trim();
       if (!assoc) break;
+      const rawEnd = (r[1] || '').trim();
+      const endDateObj = new Date(rawEnd);
       parsed.push({
         assoc: assoc,
-        end: formatDate((r[1] || '').trim()),
+        end: formatDate(rawEnd),
+        endDate: isNaN(endDateObj) ? null : endDateObj,
         status: (r[2] || '').trim(),
         notes: (r[3] || '').trim()
       });
@@ -327,7 +343,10 @@ const STATUS_CLASS = {
 function rowHtml(r){
   const cls = STATUS_CLASS[r.status] || "status-other";
   const notesEmpty = !r.notes;
-  return `<tr>
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const overdue = r.endDate && r.endDate < today;
+  return `<tr class="${overdue ? 'row-overdue' : ''}">
     <td class="assoc">${r.assoc}</td>
     <td class="end-date">${r.end}</td>
     <td><span class="status-pill ${cls}"><span class="swatch"></span>${r.status}</span></td>
