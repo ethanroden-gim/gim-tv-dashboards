@@ -210,10 +210,18 @@
   .status-blocked{ background:rgba(208,59,59,0.18); color:#f08080; }
   .status-blocked .swatch{ background:var(--status-blocked); }
 
-  th.col-rank{ width:64px; }
+  th.col-rank{ width:40px; }
   th.col-assoc{ width:auto; }
-  th.col-status{ width:150px; }
-  th.col-notes{ width:34%; }
+  th.col-check{ width:72px; }
+  th.col-status{ width:120px; }
+  th.col-notes{ width:16%; }
+
+  th.col-check, td.chk-cell{ text-align:center; }
+  th.col-check{ font-size:11px; line-height:1.2; letter-spacing:0.3px; }
+
+  .chk{ display:inline-block; font-size:19px; font-weight:700; line-height:1; }
+  .chk-yes{ color:var(--gim-green); text-shadow:0 0 10px rgba(122,193,66,0.4); }
+  .chk-no{ color:rgba(255,255,255,0.16); }
 
   /* ---------- SUMMARY FOOTER ---------- */
   footer{
@@ -294,6 +302,9 @@
           <tr>
             <th class="col-rank num">Rank</th>
             <th class="col-assoc">Association</th>
+            <th class="col-check">Bank Feed</th>
+            <th class="col-check">Recurring Invoice / Deposits</th>
+            <th class="col-check">Other Invoices</th>
             <th class="col-status">Status</th>
             <th class="col-notes">Notes</th>
           </tr>
@@ -307,6 +318,9 @@
           <tr>
             <th class="col-rank num">Rank</th>
             <th class="col-assoc">Association</th>
+            <th class="col-check">Bank Feed</th>
+            <th class="col-check">Recurring Invoice / Deposits</th>
+            <th class="col-check">Other Invoices</th>
             <th class="col-status">Status</th>
             <th class="col-notes">Notes</th>
           </tr>
@@ -356,7 +370,8 @@ async function loadData(){
     const text = await res.text();
     const table = parseCSV(text);
 
-    // Row 0 is the header (Rank, Association, Status, Notes). Data rows
+    // Row 0 is the header (Rank, Association, Bank Feed, Recurring Invoice /
+    // Deposits, Other Invoices, Status, Notes). Data rows
     // follow until the first blank Rank cell — that's the separator before
     // the status-summary block in the sheet, which we recompute ourselves
     // below rather than trust (it can drift from the actual row data).
@@ -365,11 +380,15 @@ async function loadData(){
       const r = table[i];
       const rank = (r[0] || '').trim();
       if (!rank) break;
+      const isChecked = (v) => (v || '').trim().toUpperCase() === 'TRUE';
       parsed.push({
         rank: rank,
         assoc: (r[1] || '').trim(),
-        status: (r[2] || '').trim(),
-        notes: (r[3] || '').trim()
+        bankFeed: isChecked(r[2]),
+        recurringInvoice: isChecked(r[3]),
+        otherInvoices: isChecked(r[4]),
+        status: (r[5] || '').trim(),
+        notes: (r[6] || '').trim()
       });
     }
     ROWS = parsed;
@@ -389,12 +408,19 @@ const STATUS_CLASS = {
   "Blocked":"status-blocked",
 };
 
+function chkHtml(v){
+  return v ? '<span class="chk chk-yes">&#10003;</span>' : '<span class="chk chk-no">&#8211;</span>';
+}
+
 function rowHtml(r){
   const cls = STATUS_CLASS[r.status] || "status-not-started";
   const notesEmpty = !r.notes;
   return `<tr>
     <td class="rank">${r.rank}</td>
     <td class="assoc">${r.assoc}</td>
+    <td class="chk-cell">${chkHtml(r.bankFeed)}</td>
+    <td class="chk-cell">${chkHtml(r.recurringInvoice)}</td>
+    <td class="chk-cell">${chkHtml(r.otherInvoices)}</td>
     <td><span class="status-pill ${cls}"><span class="swatch"></span>${r.status}</span></td>
     <td class="notes${notesEmpty ? ' empty' : ''}">${r.notes || ''}</td>
   </tr>`;
