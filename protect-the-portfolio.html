@@ -419,10 +419,14 @@ async function loadData(){
     const text = await res.text();
     const table = parseCSV(text);
 
-    // Row 0 is the header (Player, Status, Since). Data rows follow until
+    // The published tab has a couple of title/description rows above the
+    // real header ("Player,Status,Since"), so find that row by content
+    // instead of assuming it's row 0 — then read data rows after it until
     // the first blank Player cell.
+    const headerIdx = table.findIndex(r => (r[0] || '').trim().toLowerCase() === 'player');
+    if (headerIdx === -1) throw new Error('Could not find the Player/Status/Since header row in the published sheet');
     const parsed = [];
-    for (let i = 1; i < table.length; i++){
+    for (let i = headerIdx + 1; i < table.length; i++){
       const r = table[i];
       const player = (r[0] || '').trim();
       if (!player) break;
