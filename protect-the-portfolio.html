@@ -107,7 +107,7 @@
   /* ---------- MAIN AREA ---------- */
   main{
     display:grid;
-    grid-template-columns: 1.15fr 0.85fr;
+    grid-template-columns: 1fr 1fr;
     gap:0;
     padding:34px 44px 36px 44px;
   }
@@ -117,16 +117,6 @@
     border-left:1px solid var(--hairline);
     margin-left:34px;
     padding-left:34px;
-  }
-
-  .panel-label{
-    font-size:16px;
-    letter-spacing:1.5px;
-    text-transform:uppercase;
-    color:var(--gim-green);
-    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    font-weight:700;
-    margin-bottom:14px;
   }
 
   table{ width:100%; border-collapse:collapse; table-layout:fixed; }
@@ -144,10 +134,11 @@
   }
 
   tbody td{
-    padding:13px 10px;
+    padding:10px 10px;
     border-bottom:1px solid var(--hairline);
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    font-size:20px;
+    font-size:19px;
+    line-height:1.2;
     vertical-align:middle;
   }
   tbody tr:last-child td{ border-bottom:none; }
@@ -168,9 +159,10 @@
     display:inline-flex;
     align-items:center;
     gap:8px;
-    padding:5px 12px;
+    padding:4px 12px;
     border-radius:20px;
     font-size:14px;
+    line-height:1.2;
     font-weight:700;
     letter-spacing:0.5px;
     text-transform:uppercase;
@@ -334,7 +326,6 @@
 
     <main>
       <div class="col">
-        <div class="panel-label">Player Status</div>
         <table>
           <thead>
             <tr>
@@ -452,13 +443,29 @@ function statusClass(status){
   return 'status-other';
 }
 
+// The sheet lists players as "Last, First" — display as "First Last".
+function formatName(raw){
+  const name = (raw || '').trim();
+  const parts = name.split(',').map(s => s.trim());
+  if (parts.length === 2 && parts[0] && parts[1]) return `${parts[1]} ${parts[0]}`;
+  return name;
+}
+
+// The sheet abbreviates elimination week as "Wk 1" — spell it out.
+function formatSince(raw){
+  const since = (raw || '').trim();
+  const m = since.match(/^Wk\s*(\d+)$/i);
+  if (m) return `Week ${m[1]}`;
+  return since;
+}
+
 function rowHtml(r){
   const cls = statusClass(r.status);
   const banished = cls === 'status-banished';
   return `<tr class="${banished ? 'is-banished' : ''}">
-    <td class="player">${r.player}</td>
+    <td class="player">${formatName(r.player)}</td>
     <td><span class="status-pill ${cls}"><span class="swatch"></span>${r.status}</span></td>
-    <td class="since">${r.since || '&mdash;'}</td>
+    <td class="since">${formatSince(r.since) || '&mdash;'}</td>
   </tr>`;
 }
 
