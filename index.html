@@ -367,6 +367,7 @@ async function loadData(){
   try {
     const url = INVOICES_CSV_URL + (INVOICES_CSV_URL.includes('?') ? '&' : '?') + 'cachebust=' + Date.now();
     const res = await fetch(url);
+    if (!res.ok) throw new Error(`CSV fetch failed: HTTP ${res.status}`);
     const text = await res.text();
     const table = parseCSV(text);
 

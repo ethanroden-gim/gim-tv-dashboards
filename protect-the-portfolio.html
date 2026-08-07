@@ -56,7 +56,7 @@
     font-family:'Cinzel','Copperplate','Copperplate Gothic Light',serif;
     overflow:hidden;
     display:grid;
-    grid-template-rows: 136px 1fr 176px;
+    grid-template-rows: 200px 1fr;
     grid-template-columns: 1fr;
   }
 
@@ -70,10 +70,10 @@
     background:linear-gradient(180deg, #101010 0%, #0b0b0b 100%);
   }
   .brand{ display:flex; align-items:center; gap:26px; }
-  .brand-mark{ height:100px; width:auto; display:block; border-radius:4px; }
+  .brand-mark{ height:168px; width:auto; display:block; }
   .title-block h1{
     font-family:'Alfa Slab One', serif;
-    font-size:40px;
+    font-size:46px;
     color:var(--ink);
     letter-spacing:1.2px;
     line-height:1.25;
@@ -103,23 +103,16 @@
     margin-right:8px;
     box-shadow:0 0 8px var(--gim-green);
   }
-  .updated .fiction-tag{
-    display:block;
-    margin-top:10px;
-    font-size:13px;
-    letter-spacing:1px;
-    text-transform:uppercase;
-    color:rgba(255,255,255,0.4);
-  }
 
   /* ---------- MAIN AREA ---------- */
   main{
     display:grid;
     grid-template-columns: 1.15fr 0.85fr;
     gap:0;
-    padding:22px 44px 10px 44px;
+    padding:34px 44px 36px 44px;
   }
   .col{ display:flex; flex-direction:column; min-height:0; }
+  .col-right{ gap:26px; }
   .col + .col{
     border-left:1px solid var(--hairline);
     margin-left:34px;
@@ -151,10 +144,10 @@
   }
 
   tbody td{
-    padding:11px 10px;
+    padding:13px 10px;
     border-bottom:1px solid var(--hairline);
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    font-size:19px;
+    font-size:20px;
     vertical-align:middle;
   }
   tbody tr:last-child td{ border-bottom:none; }
@@ -240,17 +233,44 @@
     line-height:1.4;
   }
 
-  /* ---------- FOOTER STAT TILES ---------- */
-  footer{
-    display:grid;
-    grid-template-columns: 1.3fr 1fr 1fr;
-    gap:20px;
-    padding:18px 44px 26px 44px;
-    border-top:3px solid var(--gim-green);
-    background:linear-gradient(0deg, #101010 0%, #0b0b0b 100%);
-  }
-  .tile{
+  /* ---------- SEASON SNAPSHOT CARD ---------- */
+  .stats-card{
+    flex:1;
+    display:flex;
+    flex-direction:column;
     background:var(--panel);
+    border:1px solid var(--hairline);
+    border-left:4px solid var(--gim-green);
+    border-radius:10px;
+    padding:26px 30px;
+    min-height:0;
+  }
+  .stats-card h2{
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size:21px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:var(--ink);
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  .stats-card .tips-sub{
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size:14px;
+    color:var(--ink-muted);
+    margin-bottom:18px;
+  }
+  .stats-row{
+    flex:1;
+    display:flex;
+    align-items:stretch;
+    gap:20px;
+  }
+
+  /* ---------- SEASON SNAPSHOT TILES ---------- */
+  .tile{
+    flex:1;
+    background:#101010;
     border:1px solid var(--hairline);
     border-radius:10px;
     display:flex;
@@ -261,7 +281,7 @@
   }
   .tile .pct{
     font-family:'Alfa Slab One', serif;
-    font-size:40px;
+    font-size:48px;
     line-height:1;
   }
   .tile .count{
@@ -290,7 +310,7 @@
   }
   .tile.complete .pct{
     color:var(--gim-green);
-    font-size:52px;
+    font-size:58px;
     text-shadow:0 0 18px rgba(122,193,66,0.5);
   }
   .tile.complete .label{ color:var(--gim-green); font-weight:700; }
@@ -309,7 +329,6 @@
       </div>
       <div class="updated">
         <span class="dot"></span>Last updated <span id="updated-time">Aug 7, 2026 &middot; 3:15 PM</span>
-        <span class="fiction-tag">Fiction only &middot; not a performance review</span>
       </div>
     </header>
 
@@ -327,7 +346,7 @@
           <tbody id="table-body"></tbody>
         </table>
       </div>
-      <div class="col">
+      <div class="col col-right">
         <div class="tips-card">
           <h2>Between Sessions</h2>
           <div class="tips-sub">How to work toward finding the Misaligned Managers</div>
@@ -337,10 +356,13 @@
           <div class="tip-row"><span class="marker">&#9656;</span><span>Keep it fun and keep it fictional &mdash; leave real work talk out of the game.</span></div>
           <div class="tip-row"><span class="marker">&#9656;</span><span>Questions before the next session? Ask your host.</span></div>
         </div>
+        <div class="stats-card">
+          <h2>Season Snapshot</h2>
+          <div class="tips-sub">Where the portfolio stands right now</div>
+          <div class="stats-row" id="stats-row"></div>
+        </div>
       </div>
     </main>
-
-    <footer id="summary"></footer>
   </div><!-- /#stage -->
 
 <script>
@@ -348,7 +370,7 @@
 // File > Share > Publish to web, select the "Public Tracker (Display)" tab
 // ONLY (never the confidential Master Tracker tab), format "Comma-separated
 // values (.csv)" — paste the resulting URL below.
-const PTP_CSV_URL = "REPLACE_WITH_PUBLISHED_CSV_URL";
+const PTP_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQx4ndzrgtxv5XDROQg3g-VGSLqkvWIKgDQhrnicIlqt---5upNM8KoHglWvvD41nm5IcLLKJr71cbQ/pub?gid=767883201&single=true&output=csv";
 
 let ROWS = [
   { player: "Catlow, Melanie", status: "Active — In Play", since: "—" },
@@ -451,16 +473,16 @@ function render(){
     </div>
     <div class="tile banished">
       <div class="pct">${banishedCount}</div>
-      <div class="count">&nbsp;</div>
+      <div class="count">of ${total} total</div>
       <div class="label">Banished</div>
     </div>
     <div class="tile">
       <div class="pct">${total}</div>
-      <div class="count">&nbsp;</div>
+      <div class="count">in the season</div>
       <div class="label">Total Players</div>
     </div>`;
 
-  document.getElementById('summary').innerHTML = html;
+  document.getElementById('stats-row').innerHTML = html;
 }
 
 render(); // paint the fallback snapshot immediately, before the first live fetch resolves

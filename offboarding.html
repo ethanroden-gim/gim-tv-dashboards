@@ -304,6 +304,7 @@ async function loadData(){
   try {
     const url = OFFBOARDING_CSV_URL + (OFFBOARDING_CSV_URL.includes('?') ? '&' : '?') + 'cachebust=' + Date.now();
     const res = await fetch(url);
+    if (!res.ok) throw new Error(`CSV fetch failed: HTTP ${res.status}`);
     const text = await res.text();
     const table = parseCSV(text);
 
