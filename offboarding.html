@@ -269,34 +269,15 @@
   </div><!-- /#stage -->
 
 <script>
-// ---- Live data, pulled directly from the sheet's published CSV link ----
-// File > Share > Publish to web, select the "Offboarding" tab, format
-// "Comma-separated values (.csv)" — paste the resulting URL below.
-const OFFBOARDING_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTKfpWemjhrqWKGF4rj0B8CPIGfIn9nXaho2ruksHyw0jR_vEi5qFJQDifXYMM2SofqyEMBlaN5g49s/pub?gid=1890611864&single=true&output=csv";
+// ---- Live data, pulled from the Apps Script Web App bound to the sheet ----
+// The script reads the Offboarding tab directly (values *and* cell
+// background colors), so a manually-highlighted row in the sheet is
+// reflected here automatically on the next 5-minute refresh. See the
+// ?page=offboarding-feed branch of doGet(e) in the sheet's Apps Script
+// project (Code.gs).
+const OFFBOARDING_DATA_URL = "https://script.google.com/macros/s/AKfycbwSuSkqimnGEBeoq1pX5lOPEHbEEgIj9vpnjGRYQ8hBtqBESbBtLOMjFAtdKtqQPkJqpg/exec?page=offboarding-feed";
 
 let ROWS = [];
-
-function parseCSV(text){
-  const rows = [];
-  let row = [], field = '', inQuotes = false;
-  for (let i = 0; i < text.length; i++){
-    const c = text[i];
-    if (inQuotes){
-      if (c === '"'){
-        if (text[i+1] === '"'){ field += '"'; i++; }
-        else inQuotes = false;
-      } else field += c;
-    } else {
-      if (c === '"') inQuotes = true;
-      else if (c === ',') { row.push(field); field = ''; }
-      else if (c === '\r') { /* skip */ }
-      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
-      else field += c;
-    }
-  }
-  if (field.length || row.length) { row.push(field); rows.push(row); }
-  return rows;
-}
 
 function formatDate(s){
   const d = new Date(s);
@@ -304,31 +285,37 @@ function formatDate(s){
   return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
 }
 
+// Converts a sheet fill color like "#ffff00" into a low-alpha overlay so the
+// highlight reads as a tint rather than a flat block on the dark theme.
+function hexToRgba(hex, alpha){
+  if (!hex) return null;
+  let h = hex.replace('#', '');
+  if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  const n = parseInt(h, 16);
+  if (isNaN(n)) return null;
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 async function loadData(){
   try {
-    const url = OFFBOARDING_CSV_URL + (OFFBOARDING_CSV_URL.includes('?') ? '&' : '?') + 'cachebust=' + Date.now();
+    const url = OFFBOARDING_DATA_URL + (OFFBOARDING_DATA_URL.includes('?') ? '&' : '?') + 'cachebust=' + Date.now();
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`CSV fetch failed: HTTP ${res.status}`);
-    const text = await res.text();
-    const table = parseCSV(text);
+    if (!res.ok) throw new Error(`Data fetch failed: HTTP ${res.status}`);
+    const data = await res.json();
 
-    // Row 0 is the header (Association, End Date, Offboard Status, Notes).
-    // Data rows follow until the first blank Association cell.
-    const parsed = [];
-    for (let i = 1; i < table.length; i++){
-      const r = table[i];
-      const assoc = (r[0] || '').trim();
-      if (!assoc) break;
-      const rawEnd = (r[1] || '').trim();
+    const parsed = (data.rows || []).map(r => {
+      const rawEnd = (r.end || '').trim();
       const endDateObj = new Date(rawEnd);
-      parsed.push({
-        assoc: assoc,
+      return {
+        assoc: (r.assoc || '').trim(),
         end: formatDate(rawEnd),
         endDate: isNaN(endDateObj) ? null : endDateObj,
-        status: (r[2] || '').trim(),
-        notes: (r[3] || '').trim()
-      });
-    }
+        status: (r.status || '').trim(),
+        notes: (r.notes || '').trim(),
+        highlight: r.highlight || null
+      };
+    });
     ROWS = parsed;
     render();
     document.getElementById('updated-time').textContent = new Date().toLocaleString('en-US', {
@@ -351,11 +338,19 @@ function rowHtml(r){
   const today = new Date();
   today.setHours(0,0,0,0);
   const overdue = r.endDate && r.endDate < today;
-  return `<tr class="${overdue ? 'row-overdue' : ''}">
-    <td class="assoc">${r.assoc}</td>
-    <td class="end-date">${r.end}</td>
-    <td><span class="status-pill ${cls}"><span class="swatch"></span>${r.status}</span></td>
-    <td class="notes${notesEmpty ? ' empty' : ''}">${r.notes || ''}</td>
+
+  // A manual highlight in the sheet takes visual priority over the
+  // computed "overdue" red wash; both paint the same way (a tinted
+  // background on every cell), just with a different source color.
+  const tint = r.highlight ? hexToRgba(r.highlight, 0.24) : (overdue ? 'rgba(208,59,59,0.18)' : null);
+  const tdStyle = tint ? ` style="background:${tint}"` : '';
+  const overdueCls = (overdue && !r.highlight) ? ' row-overdue' : '';
+
+  return `<tr class="${overdueCls}">
+    <td class="assoc"${tdStyle}>${r.assoc}</td>
+    <td class="end-date"${tdStyle}>${r.end}</td>
+    <td${tdStyle}><span class="status-pill ${cls}"><span class="swatch"></span>${r.status}</span></td>
+    <td class="notes${notesEmpty ? ' empty' : ''}"${tdStyle}>${r.notes || ''}</td>
   </tr>`;
 }
 
@@ -367,7 +362,7 @@ function render(){
 }
 
 loadData();
-setInterval(loadData, 5 * 60 * 1000); // re-fetch the CSV every 5 minutes, no full page reload
+setInterval(loadData, 5 * 60 * 1000); // re-fetch every 5 minutes (picks up new highlights), no full page reload
 
 // ---- Scale-to-fit: see the invoice-automation dashboard for the full rationale. ----
 function fitStage(){
