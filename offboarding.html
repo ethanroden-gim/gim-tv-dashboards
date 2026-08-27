@@ -158,18 +158,18 @@
   .status-pill{
     display:inline-flex;
     align-items:center;
-    gap:8px;
-    padding:5px 12px;
-    border-radius:20px;
-    font-size:14px;
+    gap:6px;
+    padding:4px 10px;
+    border-radius:16px;
+    font-size:12px;
     font-weight:700;
-    letter-spacing:0.5px;
+    letter-spacing:0.3px;
     text-transform:uppercase;
     white-space:nowrap;
-    margin-right:10px;
+    margin-right:8px;
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   }
-  .status-pill .swatch{ width:9px;height:9px; border-radius:50%; flex:none; }
+  .status-pill .swatch{ width:8px;height:8px; border-radius:50%; flex:none; }
 
   .status-in-progress{ background:rgba(250,178,25,0.15); color:#fab219; }
   .status-in-progress .swatch{ background:var(--status-in-progress); }
@@ -197,9 +197,13 @@
   }
 
   th.col-assoc{ width:34%; }
-  th.col-end{ width:128px; }
-  th.col-status{ width:170px; }
+  th.col-end{ width:110px; }
+  th.col-status{ width:234px; }
   th.col-notes{ width:auto; }
+
+  /* Safety net: even a slightly-too-long status label clips inside its own
+     cell instead of visually bleeding into the Notes column next to it. */
+  tbody td:nth-child(3){ overflow:hidden; }
 
   /* ---------- FOOTER (kept minimal — no summary math requested) ---------- */
   footer{
@@ -297,7 +301,7 @@ function parseCSV(text){
 function formatDate(s){
   const d = new Date(s);
   if (isNaN(d)) return s;
-  return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
 }
 
 async function loadData(){
